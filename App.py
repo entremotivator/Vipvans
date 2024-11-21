@@ -5,18 +5,22 @@ import random
 # App Configuration
 st.set_page_config(page_title="VIP Sprinter and Party Bus Booking", layout="wide")
 
-# Generate Demo Data
+# Generate Demo Data with Images
 def generate_demo_vehicles():
+    images = [
+        "IMG_3639.jpeg", "IMG_3649.jpeg", "IMG_3892.jpeg",
+        "IMG_4336.jpeg", "IMG_4390.jpeg", "IMG_4459.jpeg", "IMG_4460.jpeg"
+    ]
     vehicles = [
         {"Name": f"Sprinter {i}", "Type": "Sprinter", "Capacity": random.randint(8, 12),
          "Price/Hour": random.randint(100, 150), "Fuel Cost/Hour": random.randint(20, 30),
-         "Maintenance Cost/Hour": random.randint(10, 20)}
+         "Maintenance Cost/Hour": random.randint(10, 20), "Image": random.choice(images)}
         for i in range(1, 8)
     ]
     vehicles += [
         {"Name": f"Party Bus {i}", "Type": "Party Bus", "Capacity": random.randint(20, 30),
          "Price/Hour": random.randint(200, 300), "Fuel Cost/Hour": random.randint(40, 60),
-         "Maintenance Cost/Hour": random.randint(20, 30)}
+         "Maintenance Cost/Hour": random.randint(20, 30), "Image": random.choice(images)}
         for i in range(1, 9)
     ]
     return pd.DataFrame(vehicles)
@@ -39,18 +43,28 @@ def home_page():
     st.title("VIP Sprinter & Party Bus Booking")
     st.write("""
         Welcome to the VIP Sprinter and Party Bus Booking App! Manage your fleet, analyze profits, 
-        view customer bookings, and more. Our goal is to streamline your business operations and maximize profits.
+        view customer bookings, and more. Our app ensures smooth operations and helps you grow your business.
     """)
     st.image("https://via.placeholder.com/800x400", caption="Luxury Vehicles for Every Occasion")
 
 def inventory_page():
     st.title("Vehicle Inventory")
-    st.write("View and manage your fleet inventory:")
-    st.dataframe(inventory)
+    st.write("Explore your fleet with details and images:")
+    for index, row in inventory.iterrows():
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.image(row["Image"], caption=row["Name"], use_column_width=True)
+        with col2:
+            st.write(f"**Name**: {row['Name']}")
+            st.write(f"**Type**: {row['Type']}")
+            st.write(f"**Capacity**: {row['Capacity']} passengers")
+            st.write(f"**Price/Hour**: ${row['Price/Hour']}")
+            st.write(f"**Daily Profit**: ${row['Daily Profit']:.2f}")
+        st.markdown("---")
 
 def rental_prices_page():
     st.title("Rental Pricing Overview")
-    st.write("Rental pricing and profit potential for your vehicles:")
+    st.write("View pricing and profit potential for your fleet:")
     st.dataframe(inventory[["Name", "Type", "Capacity", "Price/Hour", "Daily Revenue (8 hours)", "Daily Profit"]])
 
 def profit_metrics_page():
@@ -83,6 +97,7 @@ def add_vehicle_page():
         price_per_hour = st.number_input("Price per Hour ($)", min_value=50, step=10)
         fuel_cost = st.number_input("Fuel Cost per Hour ($)", min_value=5, step=5)
         maintenance_cost = st.number_input("Maintenance Cost per Hour ($)", min_value=5, step=5)
+        image = st.file_uploader("Upload an Image", type=["jpeg", "jpg", "png"])
         submitted = st.form_submit_button("Add Vehicle")
         if submitted:
             new_vehicle = {
@@ -92,10 +107,7 @@ def add_vehicle_page():
                 "Price/Hour": price_per_hour,
                 "Fuel Cost/Hour": fuel_cost,
                 "Maintenance Cost/Hour": maintenance_cost,
-                "Daily Revenue (8 hours)": price_per_hour * 8,
-                "Daily Fuel Cost (8 hours)": fuel_cost * 8,
-                "Daily Maintenance Cost (8 hours)": maintenance_cost * 8,
-                "Daily Profit": (price_per_hour * 8) - (fuel_cost * 8) - (maintenance_cost * 8)
+                "Image": image.name if image else "https://via.placeholder.com/300x200"
             }
             global inventory
             inventory = pd.concat([inventory, pd.DataFrame([new_vehicle])], ignore_index=True)
